@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Server", "Take.Be.Server\Take.Be.Server.csproj", "{70544A12-429F-430D-8BF6-20CACB11FE26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Client", "Take.Excellence.Client\Take.Be.Client.csproj", "{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Client", "Take.Be.Client\Take.Be.Client.csproj", "{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Domain", "Take\Take.Be.Domain.csproj", "{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Domain", "Take.Be.Domain\Take.Be.Domain.csproj", "{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
