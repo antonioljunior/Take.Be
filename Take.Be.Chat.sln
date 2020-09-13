@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Server", "Take.Be.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Client", "Take.Excellence.Client\Take.Be.Client.csproj", "{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Take.Be.Domain", "Take\Take.Be.Domain.csproj", "{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44DEF4EA-FF0D-4F9F-B0D4-74A2A0FF5CE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF6F0ACF-1856-4DC7-B17E-466BC4D2BC9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

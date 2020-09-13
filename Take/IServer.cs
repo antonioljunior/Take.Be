@@ -1,4 +1,4 @@
-﻿namespace Take.Be.Server
+﻿namespace Take.Be.Domain
 {
     public interface IServer
     {
