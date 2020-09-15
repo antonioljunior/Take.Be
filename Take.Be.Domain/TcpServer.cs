@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,108 +12,153 @@ namespace Take.Be.Domain
 {
     public class TcpServer : IServer
     {
-        private const int BYTE_SIZE = 1024 * 1024;
-        private const int PORT_NUMBER = 1234;
-        private readonly IPEndPoint ep;
-        private readonly TcpListener listener;
-        private readonly object locker;
-        private readonly Dictionary<string, TcpClient> clients;
+        private readonly IPEndPoint iPEndPoint;
+        private readonly TcpListener tcpListener;
+        private readonly IList<User> users;
+        private bool IsRunning;
 
         public TcpServer()
         {
-            ep = new IPEndPoint(IPAddress.Loopback, PORT_NUMBER);
-            listener = new TcpListener(ep);
-            clients = new Dictionary<string, TcpClient>();
-            locker = new object();
+            iPEndPoint = new IPEndPoint(IPAddress.Loopback, 5000);
+            tcpListener = new TcpListener(iPEndPoint);
+            users = new List<User>();
         }
 
-        public bool Start()
+        public bool TryStart()
         {
             try
             {
-                listener.Start();
-                Console.WriteLine("The Server has been started successfully.");
+                tcpListener.Start();
+
+                IsRunning = true;
+
+                var thread = new Thread(Listening);
+
+                thread.Start();
+
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error has occured when Starting the Server:", ex.Message);
+                //Should Log the error but return false to avoid break the application
                 return false;
             }
         }
 
-        public void Listening()
+        public bool TryStop()
         {
-            while (true)
+            try
             {
-                var buffer = new byte[BYTE_SIZE];
-
-                TcpClient client = listener.AcceptTcpClient();
-                client.GetStream().Read(buffer, 0, BYTE_SIZE);
-
-                string nickName = Encoding.Unicode.GetString(buffer);
-
-                lock (locker) clients.Add(nickName, client);
-
-                Thread t = new Thread(handle_clients);
-                t.Start(nickName);
-
-
-
-                byte[] bytes = Encoding.Unicode.GetBytes("*** Welcome to our chat server. Please provide a nickname: ");
-                client.GetStream().Write(bytes, 0, bytes.Length); // Send the response  
+                users.Clear();
+                tcpListener.Stop();
+                IsRunning = false;
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 
-        public void handle_clients(object nickName)
+        private void Listening()
         {
-            TcpClient client;
-
-            lock (locker) client = clients[nickName.ToString()];
-
-            while (true)
+            while (IsRunning)
             {
-                NetworkStream stream = client.GetStream();
-                byte[] buffer = new byte[1024];
-                int byte_count = stream.Read(buffer, 0, buffer.Length);
+                System.Net.Sockets.TcpClient tcpClient = tcpListener.AcceptTcpClient();
 
-                if (byte_count == 0)
-                {
-                    break;
-                }
-
-                string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
-                broadcast(data);
-                Console.WriteLine(data);
-            }
-
-            lock (locker) clients.Remove(nickName.ToString());
-            client.Client.Shutdown(SocketShutdown.Both);
-            client.Close();
-        }
-
-        public void broadcast(string data)
-        {
-            byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
-
-            lock (locker)
-            {
-                foreach (TcpClient c in clients.Values)
-                {
-                    NetworkStream stream = c.GetStream();
-                    stream.Write(buffer, 0, buffer.Length);
-                }
+                var receiveMessageThread = new Thread(new ParameterizedThreadStart(ReceiveMessage));
+                receiveMessageThread.Start(tcpClient);
             }
         }
 
-        public string ReceiveMessage(string nickName, string message)
+        public bool ConnectUser(System.Net.Sockets.TcpClient client, string nickName)
+        {
+            try
+            {
+                var user = new User(Guid.NewGuid(), client, nickName);
+                users.Add(user);
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                //TODO: Implement log mechanism 
+                return false;
+            }
+        }
+
+        public bool DisconnectUser(string nickName)
+        {
+            var userToDisconnect = users.Where(u => u.NickName == nickName).FirstOrDefault();
+            if (userToDisconnect != null)
+            {
+                users.Remove(userToDisconnect);
+                return true;
+            }
+
+            return false;
+        }
+
+        public void SendPublicMessage(User userFrom, User userTo)
         {
             throw new NotImplementedException();
+        }
+
+        public void SendBroadCastMessage(object message)
+        {
+            StreamWriter streamWriter;
+            foreach (User user in users)
+            {
+                streamWriter = new StreamWriter(user.TcpClient.GetStream());
+                WriteMessageToSender(streamWriter, message.ToString());
+                streamWriter = null;
+            }
+        }
+
+        public void ReceiveMessage(object tcpClient)
+        {
+            var client = (System.Net.Sockets.TcpClient)tcpClient;
+            var streamWriter = new StreamWriter(client.GetStream());
+            var streamReader = new StreamReader(client.GetStream());
+            string clientMessage = streamReader.ReadLine();
+            string roomName = "#general";
+
+            if (clientMessage == SystemMessages.FIRST_CONNECTION)
+                WriteMessageToSender(streamWriter, SystemMessages.WELCOME_TO_CHAT);
+
+            if (clientMessage.Contains(SystemMessages.NICKNAME_VALIDATE))
+            {
+                //TODO: Create a message pattern based on JSON to avoid this kind of decomposition
+                string nickName = clientMessage.Split(':')[1];
+                if (NickNameAlreadyTaken(nickName))
+                    WriteMessageToSender(streamWriter, string.Format(SystemMessages.NICKNAME_ALREADY_TAKEN, nickName));
+                else
+                {
+                    ConnectUser(client, nickName);
+                    WriteMessageToSender(streamWriter, string.Format(SystemMessages.NICKNAME_REGISTERED_SUCCESS, nickName, roomName));
+                    var thread = new Thread(new ParameterizedThreadStart(SendBroadCastMessage));
+                    thread.Start(string.Format("\"{0}\" has joined {1}", nickName, roomName));
+                }
+            }
+        }
+
+        private bool NickNameAlreadyTaken(string nickName)
+        {
+            return users.Where(u => u.NickName == nickName).Any();
+        }
+
+        private void WriteMessageToSender(StreamWriter streamWriter, string message)
+        {
+            streamWriter.WriteLine(message);
+            streamWriter.Flush();
         }
 
         public string ValidateNickName(string nickName)
         {
-            throw new NotImplementedException();
+            if (users.Any(u => u.NickName == nickName))
+                return string.Format(SystemMessages.NICKNAME_ALREADY_TAKEN, nickName);
+
+            return string.Empty;
         }
     }
 }

@@ -7,4 +7,8 @@
     <RootNamespace>Take.Be.Client</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Take.Be.Domain\Take.Be.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
